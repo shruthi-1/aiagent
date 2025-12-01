@@ -134,7 +134,6 @@ st.title(" Handwriting Personality Analyzer")
 
 # Sidebar
 with st.sidebar:
-    st.header("⚙️ Settings")
 
     llm_choice = st.radio(
         "LLM backend",
@@ -142,18 +141,10 @@ with st.sidebar:
         index=0,
     )
 
-    api_key = st.text_input(
-        "OpenAI API Key",
-        type="password",
-        help="Get from https://platform.openai.com/api-keys",
-    )
+    api_key = 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
 
-    gemini_api_key = st.text_input(
-        "Gemini API Key (free)",
-        type="password",
-        help="Get free at https://aistudio.google.com/app/apikey",
-    )
-
+    gemini_api_key = AIzaSyAkyVN_JMHBgP-KRMM6lxB10fRjNj1tID0
+    
     st.markdown("---")
     st.markdown("""
     **How it works:**
