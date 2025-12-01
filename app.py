@@ -6,6 +6,7 @@ import json
 from PIL import Image, ImageEnhance, ImageFilter
 import io
 import numpy as np
+import google.generativeai as genai
 
 # Pure PIL handwriting analysis (NO ML models needed)
 class HandwritingAnalyzer:
@@ -92,6 +93,35 @@ Format as markdown."""
             return f" Error: {response.status_code}"
     except:
         return " error - "
+@st.cache_data
+def get_personality_report_gemini(ocean_scores, gemini_api_key):
+    """
+    Use FREE Google Gemini to generate a personality report
+    from OCEAN scores. Requires a Gemini API key from:
+    https://aistudio.google.com/app/apikey
+    """
+    try:
+        genai.configure(api_key=gemini_api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+
+        prompt = f"""
+You are a personality psychologist. Analyze these Big Five (OCEAN) scores (0–1 scale):
+
+{ocean_scores}
+
+Write a professional, concise report with:
+1. A one-sentence personality summary.
+2. Three key strengths.
+3. Three practical suggestions for study/career/communication.
+4. No emojis. Keep tone neutral and professional.
+Format the response as markdown with headings and bullet points.
+"""
+
+        response = model.generate_content(prompt)
+        return response.text
+
+    except Exception as e:
+        return f"Gemini error: {e}"
 
 # === STREAMLIT UI ===
 st.set_page_config(
@@ -105,15 +135,32 @@ st.title(" Handwriting Personality Analyzer")
 # Sidebar
 with st.sidebar:
     st.header("⚙️ Settings")
-    api_key = st.text_input("OpenAI API Key", type="password", 
-                           help="Get free at platform.openai.com/api-keys")
+
+    llm_choice = st.radio(
+        "LLM backend",
+        ["OpenAI (gpt‑4o‑mini)", "Gemini (free)"],
+        index=0,
+    )
+
+    api_key = st.text_input(
+        "OpenAI API Key",
+        type="password",
+        help="Get from https://platform.openai.com/api-keys",
+    )
+
+    gemini_api_key = st.text_input(
+        "Gemini API Key (free)",
+        type="password",
+        help="Get free at https://aistudio.google.com/app/apikey",
+    )
+
     st.markdown("---")
     st.markdown("""
     **How it works:**
     1. Image processing extracts handwriting features
     2. Maps to OCEAN personality scores
-    3. GPT generates your report
     """)
+
 
 # Main content
 col1, col2 = st.columns([1, 2])
