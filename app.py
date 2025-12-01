@@ -1,4 +1,4 @@
-# app.py - 100% WORKING - GEMINI VERSION!
+# app.py - 100% WORKING - NO sklearn/torch dependencies!
 import streamlit as st
 import base64
 import requests
@@ -6,7 +6,6 @@ import json
 from PIL import Image, ImageEnhance, ImageFilter
 import io
 import numpy as np
-import google.generativeai as genai
 
 # Pure PIL handwriting analysis (NO ML models needed)
 class HandwritingAnalyzer:
@@ -55,14 +54,15 @@ class HandwritingAnalyzer:
 # Initialize analyzer
 analyzer = HandwritingAnalyzer()
 
-# GEMINI API (SIMPLEST POSSIBLE - FREE!)
+# OpenAI API (SIMPLEST POSSIBLE)
 @st.cache_data
 def get_personality_report(ocean_scores, api_key):
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        prompt = f"""Analyze these Big Five (OCEAN) personality scores from handwriting analysis:
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    prompt = f"""Analyze these Big Five (OCEAN) personality scores from handwriting analysis:
 
 {json.dumps(ocean_scores, indent=2)}
 
@@ -70,37 +70,49 @@ Create a fun personality report with:
 1. **Personality Summary** (1 sentence)
 2. **Your Top 3 Strengths** ✨
 3. **3 Practical Tips** for study/career/communication 💡
-4. Use emojis and keep it positive!
+4. don't Use emojis and keep it professional!
 
 Format as markdown."""
-        
-        response = model.generate_content(prompt)
-        return response.text
-        
+    
+    data = {
+        "model": "gpt-4o-mini",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 400,
+        "temperature": 0.7
+    }
+    
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/chat/completions", 
+            headers=headers, json=data, timeout=10
+        )
+        if response.status_code == 200:
+            return response.json()["choices"][0]["message"]["content"]
+        else:
+            return f"❌ API Error: {response.status_code}"
     except:
-        return "❌ Network error - check your Gemini API key"
+        return "❌ Network error - check your API key"
 
 # === STREAMLIT UI ===
 st.set_page_config(
-    page_title="Handwriting Personality AI", 
+    page_title="✍️ Handwriting Personality", 
     page_icon="✍️",
     layout="wide"
 )
 
 st.title(" Handwriting Personality Analyzer")
-st.markdown("Upload handwriting → AI Vision → Gemini Personality Report")
 
 # Sidebar
 with st.sidebar:
     st.header("⚙️ Settings")
-    api_key = st.text_input("Google Gemini API Key", type="password", 
-                           help="FREE! Get at https://aistudio.google.com/app/apikey")
+    api_key = st.text_input("OpenAI API Key", type="password", 
+                           help="Get free at platform.openai.com/api-keys")
     st.markdown("---")
     st.markdown("""
     **How it works:**
     1. Image processing extracts handwriting features
     2. Maps to OCEAN personality scores
-    3. Gemini generates your report
+    3. GPT generates your report
     """)
 
 # Main content
@@ -119,17 +131,14 @@ with col2:
     st.markdown("""
     - **5 OCEAN Scores** (0-1 scale)
     - **Personality Summary**
-    - **Top Strengths** 
-    - **Actionable Tips**
     """)
-  
 
 # Process image
 if uploaded_file is not None and api_key:
     image = Image.open(uploaded_file)
     
     # Display image
-    st.image(image, caption="Your handwriting sample", use_container_width=True)
+    st.image(image, caption="Your handwriting sample", use_column_width=True)
     
     if st.button("🔮 **ANALYZE PERSONALITY**", type="primary", use_container_width=True):
         with st.spinner("🔍 Analyzing handwriting features..."):
@@ -137,14 +146,14 @@ if uploaded_file is not None and api_key:
             ocean_scores = analyzer.predict_ocean(image)
         
         # 2. Display scores
-        st.subheader("🧠 Your OCEAN Scores")
+        st.subheader("OCEAN Scores")
         cols = st.columns(5)
         for i, (trait, score) in enumerate(ocean_scores.items()):
             with cols[i]:
                 st.metric(trait.title(), f"{score}", delta=f"{score*100:.0f}%")
         
         # 3. Generate report
-        with st.spinner(" personality insights..."):
+        with st.spinner("personality insights..."):
             report = get_personality_report(ocean_scores, api_key)
         
         # 4. Display report
@@ -152,20 +161,19 @@ if uploaded_file is not None and api_key:
         st.markdown(report)
         
         # 5. JSON for sharing
-        with st.expander("Raw Scores"):
+        with st.expander("Raw Scores (Shareable)"):
             st.json(ocean_scores)
         
         st.balloons()
-        st.success("Analysis complete!")
+        st.success("✨ Analysis complete!")
         
 elif uploaded_file is None:
     # Example image
-    st.info("Upload handwriting image to start!")
+    st.info("👆 Upload handwriting image to start!")
     st.markdown("[Try with any handwriting sample!]")
     
 elif not api_key:
-    st.warning("Enter Google Gemini API key in sidebar")
+    st.warning("🔑 Enter OpenAI API key in sidebar")
 
 # Footer
 st.markdown("---")
-
