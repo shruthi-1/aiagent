@@ -141,9 +141,9 @@ with st.sidebar:
         index=0,
     )
 
-    api_key = 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
+    api_key = "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"
 
-    gemini_api_key = AIzaSyAkyVN_JMHBgP-KRMM6lxB10fRjNj1tID0
+    gemini_api_key = "AIzaSyAkyVN_JMHBgP-KRMM6lxB10fRjNj1tID0"
     
     st.markdown("---")
     st.markdown("""
