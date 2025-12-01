@@ -89,9 +89,9 @@ Format as markdown."""
         if response.status_code == 200:
             return response.json()["choices"][0]["message"]["content"]
         else:
-            return f"❌ API Error: {response.status_code}"
+            return f" Error: {response.status_code}"
     except:
-        return "❌ Network error - check your API key"
+        return " error - "
 
 # === STREAMLIT UI ===
 st.set_page_config(
@@ -164,8 +164,8 @@ if uploaded_file is not None and api_key:
         with st.expander("Raw Scores (Shareable)"):
             st.json(ocean_scores)
         
-        st.balloons()
-        st.success("✨ Analysis complete!")
+       
+        st.success(" Analysis complete!")
         
 elif uploaded_file is None:
     # Example image
